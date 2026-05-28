@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Outfit", sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sporty: "Archivo", sans-serif;
+
+  --color-brand: #c9a84c;
+  --color-surface: #000000;
+  --color-border: #1a1a1a;
+  --color-border-deep: #262626;
+  --color-text-main: #ffffff;
+  --color-text-muted: #a3a3a3;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+  }
+  body {
+    @apply bg-surface text-text-main font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: pan-y;
+  }
+}
+
+@utility section-label {
+  @apply text-[10px] tracking-[0.3em] uppercase bg-neutral-100 border border-neutral-200 text-neutral-500 px-3 py-1 rounded-full mb-6 font-bold inline-block;
+}
+
+@utility section-title {
+  @apply font-display font-extrabold text-4xl md:text-6xl lg:text-7xl tracking-tight leading-[1.05] mb-8 uppercase text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-neutral-500 drop-shadow-sm;
+}
+
+@utility btn-primary {
+  @apply rounded-full bg-gradient-to-b from-zinc-800 to-zinc-950 border border-white/10 text-neutral-100 px-10 py-[1.15rem] font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:border-white/30 hover:scale-105 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+@utility btn-secondary {
+  @apply rounded-full bg-white/5 border border-white/10 text-neutral-300 px-10 py-[1.15rem] font-bold uppercase tracking-[0.2em] text-xs hover:bg-white/10 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none hover:text-white;
+}
+
+@layer utilities {
+  .animate-diamond-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .animate-diamond-shine::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-20deg);
+    animation: diamond-shine 6s infinite;
+  }
+
+  .animate-slow-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .animate-slow-shine::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-20deg);
+    animation: diamond-shine 8s ease-in-out infinite;
+  }
+  @keyframes diamond-shine {
+    0% {
+      left: -100%;
+    }
+    50% {
+      left: 200%;
+    }
+    100% {
+      left: 200%;
+    }
+  }
+
+  .text-diamond-shine {
+    background: linear-gradient(
+      110deg,
+      #e4e4e7 0%,
+      #ffffff 30%,
+      #ffffff 40%,
+      #e4e4e7 60%,
+      #a1a1aa 100%
+    );
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: text-diamond-shine 6s linear infinite;
+  }
+  @keyframes text-diamond-shine {
+    0% {
+      background-position: 200% center;
+    }
+    100% {
+      background-position: -200% center;
+    }
+  }
+
+  .dropdown-scrollbar {
+    -webkit-overflow-scrolling: touch;
+  }
+  .dropdown-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .dropdown-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dropdown-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  .dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

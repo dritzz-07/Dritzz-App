@@ -1,0 +1,52 @@
+{% comment %} Load React App Assets {% endcomment %}
+<link rel="stylesheet" href="{{ 'index.css' | asset_url }}">
+<script src="{{ 'index.js' | asset_url }}" defer="defer" type="module"></script>
+
+<style>
+  @keyframes spin-loader { to { transform: rotate(360deg); } }
+  .dritzz-loading-container {
+    min-height: 100vh; 
+    background: #000; 
+    color: #fff; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-family: sans-serif;
+  }
+</style>
+
+<div id="root">
+  <div class="dritzz-loading-container">
+    <div style="text-align: center;">
+      <h2 style="letter-spacing: 0.3em; text-transform: uppercase; font-size: 14px; margin-bottom: 20px;">Dritzz Elite</h2>
+      <div style="width: 40px; height: 40px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #fff; border-radius: 50%; animation: spin-loader 1s linear infinite; margin: 0 auto;"></div>
+      <p style="margin-top: 20px; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.1em;">Loading Application...</p>
+    </div>
+  </div>
+</div>
+
+{% comment %} 
+  The React application will mount to #root.
+  The assets/index.js and assets/index.css must be present in the Shopify assets folder.
+{% endcomment %}
+
+{% schema %}
+{
+  "name": "Dritzz App",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Elite Car Care"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Dritzz App"
+    }
+  ]
+}
+{% endschema %}

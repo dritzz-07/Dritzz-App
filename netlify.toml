@@ -1,0 +1,11 @@
+[build]
+  command = "CI=false npm run build"
+  publish = "dist"
+
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyBeQF9kp3KcXh-govTv3sUB5VAifzZ213g"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

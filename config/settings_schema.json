@@ -1,0 +1,11 @@
+[
+  {
+    "name": "theme_info",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Dritzz Theme Info"
+      }
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isAdmin() {
+      let isEmailAdmin = request.auth != null && request.auth.token != null && 'email' in request.auth.token && (
+        request.auth.token.email == 'dritzz.info@gmail.com' ||
+        request.auth.token.email == 'Dritzz.info@gmail.com' ||
+        request.auth.token.email == 'sujitsinghguw@gmail.com' ||
+        request.auth.token.email == 'Sujitsinghguw@gmail.com' ||
+        request.auth.token.email == 'admin@dritzz.info'
+      );
+      
+      let isPhoneAdmin = request.auth != null && request.auth.token != null && 'phone_number' in request.auth.token && (
+        request.auth.token.phone_number == '+919876543210' // Add your admin phone numbers here if needed
+      );
+
+      return isEmailAdmin || isPhoneAdmin;
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /bookings/{bookingId} {
+      allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create: if true;
+    }
+
+    match /subscriptions/{subId} {
+      allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create: if true;
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create: if true;
+    }
+  }
+}
+

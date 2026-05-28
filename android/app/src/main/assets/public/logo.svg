@@ -1,0 +1,7 @@
+<svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Aerodynamic D Icon - Mathematically Perfect Replica -->
+  <path d="M 100 220 L 164 60 H 420 C 500 60 436 220 356 220 H 180 L 196 180 H 372 C 412 180 444 100 404 100 H 188 L 140 220 Z" fill="white" fill-rule="evenodd" />
+  
+  <!-- DRITZZ Text - Heavy Slanting Geometric -->
+  <text x="300" y="340" font-family="system-ui, -apple-system, sans-serif" font-weight="950" font-style="italic" font-size="110" fill="white" text-anchor="middle" style="letter-spacing: -0.02em; text-transform: uppercase;">DRITZZ</text>
+</svg>

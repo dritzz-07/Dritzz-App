@@ -1,0 +1,8 @@
+{
+  "name": "Dritzz - Premium Doorstep Car Wash",
+  "description": "High-performance Shopify theme for professional doorstep car wash and detailing services in Hyderabad.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
