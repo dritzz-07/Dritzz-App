@@ -3,13 +3,13 @@ import { Package } from './types';
 export const PACKAGES: Package[] = [
   {
     id: 'basic',
-    name: 'Basic Care',
-    tagline: 'Affordable Quick Wash',
+    name: 'DRITZZ BASIC',
+    tagline: 'Quick exterior refresh',
     price: {
-      hatchback: 449,
-      sedan: 449,
-      suv: 449,
-      muv: 449
+      hatchback: 499,
+      sedan: 499,
+      suv: 599,
+      muv: 599
     },
     icon: 'Droplets',
     features: [
@@ -20,44 +20,43 @@ export const PACKAGES: Package[] = [
   },
   {
     id: 'premium',
-    name: 'Premium Care',
-    tagline: 'Complete Interior + Exterior Care',
+    name: 'DRITZZ PREMIUM',
+    tagline: 'Inside & out, spotless',
     price: {
-      hatchback: 799,
-      sedan: 899,
-      suv: 1099,
-      muv: 1099
+      hatchback: 699,
+      sedan: 699,
+      suv: 799,
+      muv: 799
     },
     icon: 'Sparkles',
     features: [
       'Exterior Foam Wash',
-      'Interior Vacuum',
-      'Dashboard Cleaning',
-      'Tyre Cleaning & Shine',
+      'Interior vacuuming',
+      'Dashboard & Console detailing',
+      'Tyre Cleaning & Polish',
       'Doorstep Service'
     ],
-    featured: false // We will handle featured badge in UI for Premium
+    featured: false
   },
   {
     id: 'monthly',
-    name: 'Monthly Care',
-    tagline: 'Smart Car Owners Choose Monthly Care',
+    name: 'DRITZZ MONTHLY SERVICE',
+    tagline: '3 washes monthly + 1 exterior',
     price: {
-      hatchback: 2499,
-      sedan: 2799,
-      suv: 3199,
-      muv: 3199
+      hatchback: 1999,
+      sedan: 1999,
+      suv: 2499,
+      muv: 2499
     },
     icon: 'Gem',
     features: [
-      '4 Washes Every Month',
-      'Exterior Foam Wash',
-      'Interior Vacuum',
+      '3 Washes Monthly + 1 Exterior Wash',
+      'Thorough Interior Vacuum',
       'Dashboard Cleaning',
-      'Tyre Cleaning & Shine',
-      'Priority Booking'
+      'Tyre Polish & Shine',
+      'Priority Scheduling'
     ],
-    featured: true // To be highlighted
+    featured: true
   }
 ];
 

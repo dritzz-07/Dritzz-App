@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { BookingDetails, Package } from "../types";
 import { generateInvoice } from "../lib/pdf";
-import { db } from "../lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db, handleFirestoreError, OperationType } from "../lib/firebase";
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { getApiUrl } from "../lib/api";
 
 interface PaymentModalProps {
@@ -44,6 +44,45 @@ export default function PaymentModal({
 
     setIsLoading(true);
     try {
+      const schDate = bookingDetails.date || bookingDetails.vehicles?.[0]?.date || "";
+      const schTime = bookingDetails.timeSlot || bookingDetails.vehicles?.[0]?.timeSlot || "";
+      const customerM = bookingDetails.phone || "";
+
+      // Prevent duplicate bookings
+      let duplicateQuery;
+      if (bookingDetails.userId && bookingDetails.userId !== "guest") {
+        duplicateQuery = query(
+          collection(db, "bookings"),
+          where("userId", "==", bookingDetails.userId),
+          where("bookingDate", "==", schDate),
+          where("bookingTime", "==", schTime)
+        );
+      } else {
+        duplicateQuery = query(
+          collection(db, "bookings"),
+          where("mobileNumber", "==", customerM),
+          where("bookingDate", "==", schDate),
+          where("bookingTime", "==", schTime)
+        );
+      }
+
+      if (schDate && schTime) {
+        const dupSnap = await getDocs(duplicateQuery);
+        let isDuplicate = false;
+        dupSnap.forEach((doc) => {
+          const d = doc.data() as any;
+          if (d.status !== "cancelled" && d.status !== "Cancelled") {
+            isDuplicate = true;
+          }
+        });
+
+        if (isDuplicate) {
+          alert("A booking is already scheduled for this date and time slot.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       let subscriptionId;
 
       if (pkg.id === "monthly") {
@@ -71,23 +110,41 @@ export default function PaymentModal({
           if (subPayload[key] === undefined) delete subPayload[key];
         });
 
-        const subRef = await addDoc(
-          collection(db, "subscriptions"),
-          subPayload,
-        );
-        subscriptionId = subRef.id;
+        try {
+          const subRef = await addDoc(
+            collection(db, "subscriptions"),
+            subPayload,
+          );
+          subscriptionId = subRef.id;
+        } catch (err: any) {
+          handleFirestoreError(err, OperationType.WRITE, "subscriptions");
+        }
       }
 
       // 1. Save to Firestore
       const bookingPayload: any = {
+        // Core requested structure/fields
+        customerName: bookingDetails.name || "User",
+        mobileNumber: customerM,
+        vehicleNumber: bookingDetails.vehicles?.[0]?.vehicleNumber || "",
+        vehicleType: bookingDetails.vehicles?.[0]?.type || bookingDetails.vehicleType || "hatchback",
+        serviceType: pkg.id,
+        address: bookingDetails.address || "",
+        bookingDate: schDate,
+        bookingTime: schTime,
+        amount: amount,
+        status: "pending",
+        createdAt: serverTimestamp(),
+
+        // Plus original legacy fields for compatibility across existing UI
         ...bookingDetails,
         userId: bookingDetails.userId || "guest",
         subscriptionId: subscriptionId || null,
-        amount,
         refId,
         paymentMethod: method,
-        status: "pending",
-        createdAt: serverTimestamp(),
+        bookingStatus: "pending",
+        scheduledDate: schDate,
+        scheduledTime: schTime,
         updatedAt: serverTimestamp(),
       };
 
@@ -95,7 +152,11 @@ export default function PaymentModal({
         if (bookingPayload[key] === undefined) delete bookingPayload[key];
       });
 
-      await addDoc(collection(db, "bookings"), bookingPayload);
+      try {
+        await addDoc(collection(db, "bookings"), bookingPayload);
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.WRITE, "bookings");
+      }
 
       // 2. Send SMS Confirmation (existing logic)
       try {

@@ -40,7 +40,6 @@ export default function ProfileSetupOverlay() {
         fullName: fullName.trim(),
         email: email.trim() || null,
         city: city.trim() || null,
-        carModel: carModel.trim() || null,
         profileCompleted: true,
       });
     } catch (err: any) {
@@ -115,19 +114,6 @@ export default function ProfileSetupOverlay() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address (Optional)"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
-                />
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Car className="w-4 h-4 text-neutral-300" />
-                </div>
-                <input
-                  type="text"
-                  value={carModel}
-                  onChange={(e) => setCarModel(e.target.value)}
-                  placeholder="Primary Car Model (Optional)"
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
                 />
               </div>

@@ -23,18 +23,97 @@
         "userId": { "type": "string", "description": "Reference to the User who made the booking" },
         "name": { "type": "string" },
         "phone": { "type": "string" },
-        "vehicleType": { "type": "string", "enum": ["hatchback", "sedan", "suv"] },
-        "packageId": { "type": "string" },
+        "email": { "type": "string" },
         "address": { "type": "string" },
         "date": { "type": "string" },
-        "time": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "timeSlot": { "type": "string" },
+        "vehicleType": { "type": "string" },
+        "packageId": { "type": "string" },
+        "vehicles": { "type": "array" },
+        "status": { "type": "string", "enum": ["pending", "scheduled", "completed", "cancelled"] },
         "amount": { "type": "number" },
         "refId": { "type": "string" },
+        "paymentMethod": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "name", "phone", "vehicleType", "packageId", "address", "date", "time", "status", "amount", "refId", "createdAt"]
+      "required": ["userId", "name", "phone", "address", "status", "amount", "refId", "createdAt"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "User subscription details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Reference to the User" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "address": { "type": "string" },
+        "packageId": { "type": "string" },
+        "vehicles": { "type": "array" },
+        "status": { "type": "string", "enum": ["active", "expired", "completed", "cancelled"] },
+        "totalWashes": { "type": "number" },
+        "usedWashes": { "type": "number" },
+        "remainingWashes": { "type": "number" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "customerName", "status", "totalWashes", "remainingWashes", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User alert or notification message",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Reference to the recipient User" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "bookingId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Invoice of payment or service",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "bookingId": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "packageId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "scheduledDate": { "type": "string" },
+        "scheduledTime": { "type": "string" },
+        "address": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "vehicles": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["invoiceId", "userId", "amount", "createdAt"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Saved vehicle for convenience",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "color": { "type": "string" },
+        "parkingSlot": { "type": "string" },
+        "society": { "type": "string" },
+        "isDefault": { "type": "boolean" }
+      },
+      "required": ["userId", "type", "brand", "vehicleNumber"]
     }
   },
   "firestore": {
@@ -45,6 +124,22 @@
     "/bookings/{bookingId}": {
       "schema": "Booking",
       "description": "Stores car wash bookings"
+    },
+    "/subscriptions/{subId}": {
+      "schema": "Subscription",
+      "description": "Stores user active memberships"
+    },
+    "/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "Stores push and in-app alerts for users"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Stores tax invoice documents"
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Stores client cars for profile binding"
     }
   }
 }

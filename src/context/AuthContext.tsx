@@ -59,6 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const isUserAdmin = currentUser.email ? adminEmails.some(email => currentUser.email?.toLowerCase() === email.toLowerCase()) : false;
 
           const initDoc = await getDoc(userRef);
+          const existingData = initDoc.exists() ? initDoc.data() : null;
+          const currentIsAdmin = existingData?.isAdmin === true;
+          const finalIsAdmin = isUserAdmin || currentIsAdmin;
+
           if (!initDoc.exists()) {
             const savedName = localStorage.getItem('authFullName');
             await setDoc(userRef, {
@@ -70,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               carModel: null,
               profileCompleted: !!(currentUser.displayName || savedName),
               provider: currentUser.providerData[0]?.providerId || null,
-              isAdmin: isUserAdmin,
+              isAdmin: finalIsAdmin,
               createdAt: serverTimestamp(),
               lastLogin: serverTimestamp()
             });
@@ -83,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             const savedName = localStorage.getItem('authFullName');
             const updates: any = {
-              isAdmin: isUserAdmin,
+              isAdmin: finalIsAdmin,
               phone: currentUser.phoneNumber || initDoc.data().phone || null,
               lastLogin: serverTimestamp()
             };

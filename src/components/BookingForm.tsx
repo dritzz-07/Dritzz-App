@@ -510,12 +510,12 @@ export default function BookingForm({
         : 0;
 
   const isSocietyOffer = details.vehicles && details.vehicles.length >= 3;
-  const originalDiscountedPrice = isSocietyOffer
+  const totalPrice = isSocietyOffer
     ? Math.round(originalPrice * 0.8)
     : originalPrice;
-  const cgst = Math.round(originalDiscountedPrice * 0.09);
-  const sgst = Math.round(originalDiscountedPrice * 0.09);
-  const totalPrice = originalDiscountedPrice + cgst + sgst;
+  const basePrice = Math.round(totalPrice / 1.18);
+  const cgst = Math.round((totalPrice - basePrice) / 2);
+  const sgst = totalPrice - basePrice - cgst;
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -553,7 +553,7 @@ export default function BookingForm({
     >
       {/* Background soft glow */}
       <div className="absolute hidden md:block top-1/4 -right-1/4 w-[800px] h-[800px] bg-zinc-500/10 opacity-10 rounded-full pointer-events-none" />
-      <div className="absolute hidden md:block bottom-0 -left-1/4 w-[600px] h-[600px] bg-purple-500/10 opacity-10 rounded-full pointer-events-none" />
+      <div className="absolute hidden md:block bottom-0 -left-1/4 w-[600px] h-[600px] bg-zinc-500/10 opacity-10 rounded-full pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center mb-16">
         <div className="text-xs uppercase tracking-[0.3em] font-black text-white mb-4 drop-shadow-sm">
@@ -1011,7 +1011,7 @@ export default function BookingForm({
                       Service Amount
                     </span>
                     <span className="font-bold text-white text-xs">
-                      ₹{originalDiscountedPrice}
+                      ₹{basePrice}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-xs border-b border-white/5 pb-3">
@@ -1077,7 +1077,7 @@ export default function BookingForm({
                 </span>
                 {isSocietyOffer && (
                   <span className="text-xs text-neutral-300/60 line-through decoration-zinc-500/40 mt-1 font-medium">
-                    ₹{Math.round(originalPrice * 1.18)}
+                    ₹{originalPrice}
                   </span>
                 )}
               </div>

@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useNavigate } from "react-router-dom";
+import brandLogo from "../assets/images/regenerated_image_1779967524984.png";
 
 export default function SignInPage() {
   const { loginWithGoogle, user, loading } = useAuth();
@@ -26,6 +27,17 @@ export default function SignInPage() {
   const [phoneNumber, setPhoneNumber] = useState("+91");
   const [verificationCode, setVerificationCode] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (error) {}
+        (window as any).recaptchaVerifier = null;
+      }
+    };
+  }, []);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -49,12 +61,24 @@ export default function SignInPage() {
   };
 
   const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
+    if ((window as any).recaptchaVerifier) {
+      try {
+        (window as any).recaptchaVerifier.clear();
+      } catch (e) {
+        console.warn("Error clearing previous recaptcha verifier:", e);
+      }
+      (window as any).recaptchaVerifier = null;
+    }
+
+    try {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(
         auth,
         "recaptcha-container",
         { size: "invisible" }
       );
+    } catch (e: any) {
+      console.error("Failed to create RecaptchaVerifier:", e);
+      setError("Setup error with reCAPTCHA: " + (e.message || e));
     }
   };
 
@@ -65,10 +89,28 @@ export default function SignInPage() {
     try {
       setupRecaptcha();
       const appVerifier = (window as any).recaptchaVerifier;
-      const digitsOnly = phoneNumber.replace(/\D/g, "");
-      const formattedPhone = phoneNumber.startsWith("+")
-        ? "+" + digitsOnly
-        : `+91${digitsOnly}`;
+      if (!appVerifier) {
+        throw new Error("reCAPTCHA verifier was not initialized properly. Please refresh the page.");
+      }
+
+      let rawDigits = phoneNumber.replace(/\D/g, "");
+      let formattedPhone = "";
+      if (phoneNumber.startsWith("+")) {
+        formattedPhone = "+" + rawDigits;
+      } else {
+        if (rawDigits.length === 11 && rawDigits.startsWith("0")) {
+          rawDigits = rawDigits.substring(1);
+        }
+
+        if (rawDigits.length === 10) {
+          formattedPhone = "+91" + rawDigits;
+        } else if (rawDigits.length === 12 && rawDigits.startsWith("91")) {
+          formattedPhone = "+" + rawDigits;
+        } else {
+          formattedPhone = "+" + rawDigits;
+        }
+      }
+
       const confirmation = await signInWithPhoneNumber(
         auth,
         formattedPhone,
@@ -76,9 +118,20 @@ export default function SignInPage() {
       );
       setConfirmationResult(confirmation);
     } catch (err: any) {
-      setError(err.message || "Failed to send verification code. Ensure the number is correct.");
+      console.error("SMS transport error:", err);
+      let errMsg = err.message || "Failed to send verification code.";
+      if (err.code === "auth/captcha-check-failed") {
+        errMsg = "reCAPTCHA verification failed. Please try again.";
+      } else if (err.code === "auth/invalid-phone-number") {
+        errMsg = "The phone number format is invalid. Please type a valid number.";
+      } else if (err.code === "auth/too-many-requests") {
+        errMsg = "Too many attempts from this device. Please try again later.";
+      }
+      setError(errMsg);
       if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
         (window as any).recaptchaVerifier = null;
       }
     } finally {
@@ -118,9 +171,11 @@ export default function SignInPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", damping: 15 }}
-            className="w-16 h-16 bg-gradient-to-br from-zinc-600/20 to-zinc-900/10 rounded-[20px] flex items-center justify-center mb-6 border border-white/5 shadow-[inset_0_0_20px_rgba(255,255,255,0.2)]"
+            onClick={() => navigate("/admin")}
+            className="w-20 h-20 bg-gradient-to-br from-zinc-600/20 to-zinc-900/10 rounded-[24px] flex items-center justify-center mb-6 border border-white/5 shadow-[inset_0_0_20px_rgba(255,255,255,0.2)] cursor-pointer active:scale-95 transition-transform"
+            title="Dritzz Logo"
           >
-            <Sparkles className="w-8 h-8 text-white" />
+            <img src={brandLogo} alt="Dritzz" className="w-20 h-20 object-contain p-2" />
           </motion.div>
           <motion.h2 
             initial={{ opacity: 0, y: 10 }}
@@ -147,26 +202,6 @@ export default function SignInPage() {
         )}
 
         <div className="space-y-5">
-          <button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full h-14 bg-white text-black font-semibold rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors"
-          >
-            <Chrome className="w-5 h-5" />
-            <span className="text-[13px] tracking-wide">Continue with Google</span>
-          </button>
-
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-zinc-900/40"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] font-medium">
-              <span className="bg-[#0A0A0C] px-4 text-neutral-300/50">
-                OR CONTINUE WITH PHONE
-              </span>
-            </div>
-          </div>
-
           <form onSubmit={confirmationResult ? handleVerifyCode : handleSendCode} className="space-y-4">
             <div id="recaptcha-container"></div>
             
@@ -201,7 +236,7 @@ export default function SignInPage() {
                 <button
                   type="submit"
                   disabled={isLoading || !phoneNumber || !name.trim()}
-                  className="w-full h-14 bg-blue-600 text-white font-semibold rounded-2xl mt-4 flex items-center justify-center gap-2 hover:bg-blue-500 transition-colors disabled:opacity-50"
+                  className="w-full h-14 bg-zinc-500 text-white font-semibold rounded-2xl mt-4 flex items-center justify-center gap-2 hover:bg-zinc-400 transition-colors disabled:opacity-50"
                 >
                   {isLoading ? "Sending..." : "Send Code"}
                   <ArrowRight className="w-4 h-4" />
@@ -226,7 +261,7 @@ export default function SignInPage() {
                 <button
                   type="submit"
                   disabled={isLoading || verificationCode.length < 6}
-                  className="w-full h-14 bg-blue-600 text-white font-semibold rounded-2xl mt-4 flex items-center justify-center gap-2 hover:bg-blue-500 transition-colors disabled:opacity-50"
+                  className="w-full h-14 bg-zinc-500 text-white font-semibold rounded-2xl mt-4 flex items-center justify-center gap-2 hover:bg-zinc-400 transition-colors disabled:opacity-50"
                 >
                   {isLoading ? "Verifying..." : "Verify & Sign In"}
                   <Sparkles className="w-4 h-4" />
@@ -247,6 +282,30 @@ export default function SignInPage() {
               </>
             )}
           </form>
+
+          {!confirmationResult && (
+            <>
+              <div className="relative py-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-900/40"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] font-medium">
+                  <span className="bg-[#0A0A0C] px-4 text-neutral-300/50">
+                    OR CONTINUE WITH GOOGLE
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className="w-full h-14 bg-white text-black font-semibold rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors"
+              >
+                <Chrome className="w-5 h-5" />
+                <span className="text-[13px] tracking-wide">Continue with Google</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

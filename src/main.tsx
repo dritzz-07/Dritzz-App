@@ -1,10 +1,34 @@
-import {StrictMode} from 'react';
+import {StrictMode, Component, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
 
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
+
+class GlobalErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: ReactNode}) {
+    super(props);
+    (this as any).state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if ((this as any).state.hasError) {
+      return (
+        <div style={{ backgroundColor: 'black', color: 'red', padding: '20px', minHeight: '100vh', fontFamily: 'monospace' }}>
+          <h2>Global React Crash</h2>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{(this as any).state.error?.message}{'\n'}{(this as any).state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return (this as any).props.children;
+  }
+}
 
 // main.tsx
 console.log('Dritzz App: Script Loaded');
@@ -20,11 +44,15 @@ function initApp() {
       console.log('Dritzz App: Rendering components...');
       root.render(
         <StrictMode>
-          <AuthProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </AuthProvider>
+          <GlobalErrorBoundary>
+            <AuthProvider>
+              <LanguageProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </LanguageProvider>
+            </AuthProvider>
+          </GlobalErrorBoundary>
         </StrictMode>,
       );
       console.log('Dritzz App: Render initiated successfully.');

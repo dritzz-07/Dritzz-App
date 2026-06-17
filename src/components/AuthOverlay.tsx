@@ -44,6 +44,17 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
     setError(null);
   }, [isOpen]);
 
+  useEffect(() => {
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (error) {}
+        (window as any).recaptchaVerifier = null;
+      }
+    };
+  }, []);
+
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
@@ -70,7 +81,16 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
   };
 
   const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
+    if ((window as any).recaptchaVerifier) {
+      try {
+        (window as any).recaptchaVerifier.clear();
+      } catch (e) {
+        console.warn("Error clearing previous recaptcha verifier:", e);
+      }
+      (window as any).recaptchaVerifier = null;
+    }
+
+    try {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(
         auth,
         "recaptcha-container",
@@ -81,6 +101,9 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
           },
         },
       );
+    } catch (e: any) {
+      console.error("Failed to create RecaptchaVerifier in overlay:", e);
+      setError("Setup error with reCAPTCHA: " + (e.message || e));
     }
   };
 
@@ -91,10 +114,28 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
     try {
       setupRecaptcha();
       const appVerifier = (window as any).recaptchaVerifier;
-      const digitsOnly = phoneNumber.replace(/\D/g, "");
-      const formattedPhone = phoneNumber.startsWith("+")
-        ? "+" + digitsOnly
-        : `+91${digitsOnly}`;
+      if (!appVerifier) {
+        throw new Error("reCAPTCHA verifier was not initialized properly. Please refresh the page.");
+      }
+
+      let rawDigits = phoneNumber.replace(/\D/g, "");
+      let formattedPhone = "";
+      if (phoneNumber.startsWith("+")) {
+        formattedPhone = "+" + rawDigits;
+      } else {
+        if (rawDigits.length === 11 && rawDigits.startsWith("0")) {
+          rawDigits = rawDigits.substring(1);
+        }
+
+        if (rawDigits.length === 10) {
+          formattedPhone = "+91" + rawDigits;
+        } else if (rawDigits.length === 12 && rawDigits.startsWith("91")) {
+          formattedPhone = "+" + rawDigits;
+        } else {
+          formattedPhone = "+" + rawDigits;
+        }
+      }
+
       const confirmation = await signInWithPhoneNumber(
         auth,
         formattedPhone,
@@ -102,12 +143,20 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
       );
       setConfirmationResult(confirmation);
     } catch (err: any) {
-      setError(
-        err.message ||
-          "Failed to send verification code. Ensure the number is correct.",
-      );
+      console.error("SMS transport error in overlay:", err);
+      let errMsg = err.message || "Failed to send verification code.";
+      if (err.code === "auth/captcha-check-failed") {
+        errMsg = "reCAPTCHA verification failed. Please try again.";
+      } else if (err.code === "auth/invalid-phone-number") {
+        errMsg = "The phone number format is invalid. Please type a valid number.";
+      } else if (err.code === "auth/too-many-requests") {
+        errMsg = "Too many attempts from this device. Please try again later.";
+      }
+      setError(errMsg);
       if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
         (window as any).recaptchaVerifier = null;
       }
     } finally {
@@ -190,28 +239,6 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
               )}
 
               <div className="space-y-5">
-                <button
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="w-full h-14 btn-primary !mt-4 animate-diamond-shine"
-                >
-                  <Chrome className="w-5 h-5 relative z-10" />
-                  <span className="relative z-10">
-                    {isLoading ? "Processing..." : "Continue with Google"}
-                  </span>
-                </button>
-
-                <div className="relative py-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-zinc-900/40"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] font-medium">
-                    <span className="bg-black px-4 text-neutral-300/50">
-                      OR CONTINUE WITH PHONE
-                    </span>
-                  </div>
-                </div>
-
                 <form
                   onSubmit={
                     confirmationResult ? handleVerifyCode : handleSendCode
@@ -298,6 +325,32 @@ export default function AuthOverlay({ isOpen, onClose }: AuthOverlayProps) {
                     </>
                   )}
                 </form>
+
+                {!confirmationResult && (
+                  <>
+                    <div className="relative py-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-zinc-900/40"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] font-medium">
+                        <span className="bg-[#050505] px-4 text-neutral-300/50">
+                          OR CONTINUE WITH GOOGLE
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleGoogleLogin}
+                      disabled={isLoading}
+                      className="w-full h-14 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl flex items-center justify-center gap-3 transition-colors disabled:opacity-50 font-bold"
+                    >
+                      <Chrome className="w-5 h-5 relative z-10" />
+                      <span className="relative z-10">
+                        {isLoading ? "Processing..." : "Continue with Google"}
+                      </span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

@@ -14,7 +14,7 @@ export function HomeView() {
             className="absolute inset-0 w-full h-full object-cover scale-105"
           />
           <div className="absolute bottom-0 left-0 p-6 z-20 w-full">
-            <span className="inline-block px-3 py-1 mb-3 text-xs font-semibold uppercase tracking-wider text-blue-200 bg-blue-900/50 backdrop-blur-md rounded-full border border-blue-500/30">
+            <span className="inline-block px-3 py-1 mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-200 bg-zinc-900/50 backdrop-blur-md rounded-full border border-zinc-400/30">
               Premium Service
             </span>
             <h2 className="text-3xl font-display font-bold text-white leading-tight mb-2">
@@ -28,15 +28,15 @@ export function HomeView() {
       {/* Quick Stats or Features */}
       <section className="px-4 mt-6 grid grid-cols-3 gap-3">
         <div className="bg-neutral-900 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 border border-neutral-800">
-          <ShieldCheck size={24} className="text-blue-500" />
+          <ShieldCheck size={24} className="text-zinc-400" />
           <span className="text-xs font-medium text-neutral-300">Trusted<br/>Process</span>
         </div>
         <div className="bg-neutral-900 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 border border-neutral-800">
-          <Droplets size={24} className="text-blue-500" />
+          <Droplets size={24} className="text-zinc-400" />
           <span className="text-xs font-medium text-neutral-300">Eco-friendly<br/>Washes</span>
         </div>
         <div className="bg-neutral-900 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 border border-neutral-800">
-          <Sparkles size={24} className="text-blue-500" />
+          <Sparkles size={24} className="text-zinc-400" />
           <span className="text-xs font-medium text-neutral-300">Detailed<br/>Shine</span>
         </div>
       </section>
@@ -45,7 +45,7 @@ export function HomeView() {
       <section className="px-4 mt-8">
         <div className="flex justify-between items-end mb-4">
           <h3 className="text-xl font-display font-semibold text-white">Our Services</h3>
-          <button className="text-blue-500 text-sm font-medium flex items-center">
+          <button className="text-zinc-400 text-sm font-medium flex items-center">
             View All <ChevronRight size={16} />
           </button>
         </div>
@@ -62,7 +62,7 @@ export function HomeView() {
             <div className="flex-grow">
               <h4 className="text-base font-semibold text-white mb-1">Monthly Subscriptions</h4>
               <p className="text-xs text-neutral-400 mb-2">Daily exterior & interior cleaning right at your doorstep.</p>
-              <div className="text-sm font-bold text-blue-400">From ₹999/mo</div>
+              <div className="text-sm font-bold text-zinc-300">From ₹999/mo</div>
             </div>
           </motion.div>
 
@@ -77,7 +77,7 @@ export function HomeView() {
             <div className="flex-grow">
               <h4 className="text-base font-semibold text-white mb-1">Premium Detailing</h4>
               <p className="text-xs text-neutral-400 mb-2">Deep interior vacuuming, polish & ceramic coats.</p>
-              <div className="text-sm font-bold text-blue-400">From ₹2,499</div>
+              <div className="text-sm font-bold text-zinc-300">From ₹2,499</div>
             </div>
           </motion.div>
         </div>

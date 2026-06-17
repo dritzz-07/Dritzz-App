@@ -10,6 +10,7 @@ import {
   addDoc,
   serverTimestamp,
   deleteDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import {
   Mail,
@@ -63,6 +64,7 @@ interface Booking {
 export default function AdminDashboard() {
   const {
     user,
+    userProfile,
     loginWithEmail,
     signupWithEmail,
     loginWithGoogle,
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Add Booking State
@@ -93,69 +96,16 @@ export default function AdminDashboard() {
     "admin@dritzz.info",
   ];
   const userEmail = user?.email?.toLowerCase() || "";
-  const isAdmin = adminEmails.some(
-    (email) => userEmail === email.toLowerCase(),
+  const isAdmin = userProfile?.isAdmin || adminEmails.some(
+    (aEmail) => userEmail === aEmail.toLowerCase(),
   );
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchBookings();
-    }
-  }, [isAdmin]);
-
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoggingIn(true);
-    setLoginError("");
-    try {
-      await loginWithEmail(email, password);
-    } catch (err: any) {
-      if (
-        err.code === "auth/user-not-found" ||
-        err.code === "auth/invalid-credential" ||
-        err.message.includes("invalid")
-      ) {
-        try {
-          await signupWithEmail(email, password, "Admin");
-          return; // successful signup auto logs in
-        } catch (signupErr: any) {
-          if (signupErr.code === "auth/email-already-in-use") {
-            setLoginError("Invalid email or password.");
-          } else if (signupErr.code === "auth/network-request-failed") {
-            setLoginError(
-              "Network request failed. Please check your connection or turn off adblockers.",
-            );
-          } else {
-            setLoginError(
-              signupErr.message || "Failed to initialize admin account.",
-            );
-          }
-          return;
-        }
-      }
-
-      if (err?.code === "auth/network-request-failed") {
-        setLoginError(
-          "Network request failed. Please check your connection or turn off adblockers.",
-        );
-        return;
-      }
-      setLoginError(err.message || "Failed to login.");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const [activeTab, setActiveTab] = useState<
-    "bookings" | "sub_tasks" | "subscriptions"
-  >("bookings");
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
-
-  const fetchBookings = async () => {
+    if (!isAdmin) return;
+    
     setLoading(true);
-    try {
-      const q = query(collection(db, "bookings"));
-      const snapshot = await getDocs(q);
+
+    const unsubBookings = onSnapshot(query(collection(db, "bookings")), (snapshot) => {
       const fetched = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -168,10 +118,10 @@ export default function AdminDashboard() {
       });
 
       setBookings(fetched);
+    });
 
-      const qs = query(collection(db, "subscriptions"));
-      const s_snapshot = await getDocs(qs);
-      const fetched_s = s_snapshot.docs.map((doc) => ({
+    const unsubSubscriptions = onSnapshot(query(collection(db, "subscriptions")), (snapshot) => {
+      const fetched_s = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as any[];
@@ -183,19 +133,75 @@ export default function AdminDashboard() {
       });
 
       setSubscriptions(fetched_s);
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
-      alert("Error fetching data: " + error.message);
-    } finally {
+      
       setLoading(false);
       setIsRefreshing(false);
+    });
+
+    return () => {
+      unsubBookings();
+      unsubSubscriptions();
+    };
+  }, [isAdmin]);
+
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError("");
+
+    let loginEmail = email.trim();
+    // Allow UserID "Admin" map to the actual admin email for Firebase Auth
+    if (loginEmail === "Admin" || loginEmail === "admin") {
+      loginEmail = "admin@dritzz.info";
+    }
+
+    try {
+      await loginWithEmail(loginEmail, password);
+    } catch (err: any) {
+      if (err?.code === "auth/operation-not-allowed") {
+        setLoginError(
+          "Email/Password sign-in is disabled in your Firebase project (or the change is still propagating). If you just enabled it, please wait 5-10 minutes for Firebase cache to clear.",
+        );
+      } else if (err?.code === "auth/network-request-failed") {
+        setLoginError(
+          "Network request failed. Please check your connection or turn off adblockers.",
+        );
+      } else if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-credential" ||
+        err.message.includes("invalid")
+      ) {
+        // Auto-create the admin user if it doesn't exist yet but credentials are correct for the default admin
+        if (loginEmail === "admin@dritzz.info" && password === "admin@123") {
+          try {
+            await signupWithEmail(loginEmail, password, "Admin Account");
+            return;
+          } catch (signupErr: any) {
+             setLoginError(signupErr.message || "Invalid User ID or password.");
+          }
+        } else {
+          setLoginError("Invalid User ID or password. Please verify your credentials.");
+        }
+      } else {
+         setLoginError(err.message || "Failed to login.");
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
+
+  const [activeTab, setActiveTab] = useState<
+    "bookings" | "sub_tasks" | "subscriptions"
+  >("bookings");
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+
+  // fetchBookings removed because onSnapshot handles data real-time
 
   const handleUpdateSubscription = async (subId: string, updates: any) => {
     try {
       await updateDoc(doc(db, "subscriptions", subId), updates);
-      fetchBookings();
+      // Real-time handles updates
     } catch (e: any) {
       alert("Failed to update subscription. " + e.message);
     }
@@ -204,15 +210,13 @@ export default function AdminDashboard() {
   const handleStatusChange = async (bookingId: string, newStatus: string) => {
     try {
       const bRef = doc(db, "bookings", bookingId);
+      const booking = bookings.find((b) => b.id === bookingId);
 
       // If marking as completed, check if it belongs to a subscription
       if (newStatus === "completed") {
-        const booking = bookings.find((b) => b.id === bookingId);
         if (booking && booking.subscriptionId) {
           // decrement remaining washes
           const subRef = doc(db, "subscriptions", booking.subscriptionId);
-          // To be perfectly safe we could use a transaction, but standard update is fine for this demo
-          // First fetch the sub? Actually we can use a server-side increment or just get it
           const subSnap = await getDocs(query(collection(db, "subscriptions")));
           const subscription = subSnap.docs
             .find((d) => d.id === booking.subscriptionId)
@@ -234,6 +238,44 @@ export default function AdminDashboard() {
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b)),
       );
+
+      // Distouch a secure user notification
+      if (booking && booking.userId) {
+        let nTitle = "Booking Status Update";
+        let nMessage = `Your booking ${booking.refId || ""} has been updated to ${newStatus.toUpperCase()}.`;
+        let nType = "Status Updates";
+
+        if (newStatus === "confirmed") {
+          nTitle = "Booking Approved";
+          nMessage = `Great news! Your booking ${booking.refId || ""} has been approved and confirmed.`;
+          nType = "Booking Confirmations";
+        } else if (newStatus === "scheduled") {
+          nTitle = "Service Scheduled";
+          nMessage = `Your wash is scheduled for ${booking.date || ""} within slot: ${booking.timeSlot || ""}. See you soon!`;
+          nType = "Status Updates";
+        } else if (newStatus === "in-progress") {
+          nTitle = "Service Started";
+          nMessage = `Your car care session of ${booking.vehicleMake || ""} is now actively in progress.`;
+          nType = "Status Updates";
+        } else if (newStatus === "completed") {
+          nTitle = "Wash Completed";
+          nMessage = `Your vehicle wash is completed! Review details under invoices or tap 'Book Again' anytime. Thank you!`;
+          nType = "Status Updates";
+        } else if (newStatus === "cancelled") {
+          nTitle = "Booking Cancelled";
+          nMessage = `Your booking ${booking.refId || ""} has been cancelled. Contact support at dros.info@gmail.com for questions.`;
+          nType = "Status Updates";
+        }
+
+        await addDoc(collection(db, "notifications"), {
+          userId: booking.userId,
+          title: nTitle,
+          message: nMessage,
+          type: nType,
+          read: false,
+          createdAt: serverTimestamp(),
+        });
+      }
     } catch (error) {
       console.error("Error updating status:", error);
       alert("Failed to update status");
@@ -264,8 +306,11 @@ export default function AdminDashboard() {
     const matchesSearch =
       (b.refId || "").toLowerCase().includes(searchLower) ||
       (b.name || "").toLowerCase().includes(searchLower) ||
+      (b.customerName || "").toLowerCase().includes(searchLower) ||
       (b.email || "").toLowerCase().includes(searchLower) ||
-      (b.phone || "").includes(searchTerm);
+      (b.phone || "").includes(searchTerm) ||
+      (b.mobileNumber || "").includes(searchTerm) ||
+      (b.vehicleNumber || "").toLowerCase().includes(searchLower);
 
     let matchesDate = true;
     if (filterDate) {
@@ -278,7 +323,12 @@ export default function AdminDashboard() {
       }
     }
 
-    return matchesSearch && matchesDate;
+    let matchesStatus = true;
+    if (filterStatus) {
+      matchesStatus = (b.status || "").toLowerCase() === filterStatus.toLowerCase();
+    }
+
+    return matchesSearch && matchesDate && matchesStatus;
   });
 
   const filteredSubscriptions = subscriptions.filter((s) => {
@@ -449,98 +499,82 @@ export default function AdminDashboard() {
             </button>
           </div>
         ) : (
-          <div className="bg-neutral-900 border border-white/10 rounded-[32px] p-8 max-w-[400px] w-full shadow-2xl">
-            <div className="text-center mb-8">
+          <div className="bg-neutral-900/80 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 max-w-[400px] w-full shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50"></div>
+            
+            <div className="text-center mb-8 relative z-10">
+              <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <Lock className="w-8 h-8 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
+              </div>
               <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">
-                Admin Portal
+                System Admin
               </h1>
-              <p className="text-xs text-neutral-300">
-                Authorized personnel only
+              <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-bold">
+                Restricted Clearance Portal
               </p>
             </div>
 
             {loginError && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs text-center font-medium">
-                {loginError}
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-[11px] text-center font-medium leading-relaxed">
+                {loginError.includes("disabled in your Firebase project") ? (
+                  <span>
+                    <strong className="block text-red-300 mb-1">FIREBASE CONFIG REQUIRED:</strong>
+                    Email/Password is currently disabled in your Firebase console for project <strong>charged-axle-k8gvj</strong>. To use custom User IDs, you must enable "Email/Password" under Authentication Sign-In Methods.<br/><br/>
+                    <em>Please use <strong>Google Sign-In</strong> below as a fallback.</em>
+                  </span>
+                ) : (
+                  loginError
+                )}
               </div>
             )}
 
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div className="relative">
+            <form onSubmit={handleAdminLogin} className="space-y-4 relative z-10">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="w-4 h-4 text-neutral-300" />
+                  <Mail className="w-4 h-4 text-neutral-400 group-focus-within:text-white transition-colors" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Admin Email"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                  placeholder="Admin User ID (e.g. Admin)"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/40 transition-all font-mono"
                 />
               </div>
 
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="w-4 h-4 text-neutral-300" />
+                  <Lock className="w-4 h-4 text-neutral-400 group-focus-within:text-white transition-colors" />
                 </div>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                  placeholder="Access Code"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/40 transition-all font-mono"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full h-14 btn-primary !mt-2 !rounded-2xl"
+                className="w-full h-12 bg-white text-black hover:bg-neutral-200 rounded-xl font-bold transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
               >
-                {isLoggingIn ? "Authenticating..." : "Secure Login"}
-                <LogIn className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {isLoggingIn ? "Authenticating..." : "Establish Link"}
+                {!isLoggingIn && <LogIn className="w-3.5 h-3.5" />}
               </button>
-
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!email) {
-                      setLoginError(
-                        "Please enter your email to reset password.",
-                      );
-                      return;
-                    }
-                    setIsResetting(true);
-                    setLoginError("");
-                    try {
-                      await resetPassword(email);
-                      setLoginError(
-                        "Password reset email sent! Check your inbox.",
-                      );
-                    } catch (e: any) {
-                      setLoginError(e.message || "Failed to send reset email.");
-                    } finally {
-                      setIsResetting(false);
-                    }
-                  }}
-                  className="text-xs text-neutral-100 hover:text-white transition-colors underline-offset-4 hover:underline"
-                >
-                  {isResetting ? "Sending..." : "Forgot password?"}
-                </button>
-              </div>
             </form>
 
-            <div className="mt-6">
-              <div className="relative py-2 mb-4">
+            <div className="mt-8 relative z-10">
+              <div className="relative py-2 mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/5"></div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-[0.3em] font-bold">
-                  <span className="bg-neutral-900 px-4 text-neutral-600">
-                    OR
+                <div className="relative flex justify-center text-[10px] uppercase tracking-[0.3em] font-bold">
+                  <span className="bg-[#121212] px-4 text-neutral-500 rounded-full">
+                    Secondary Access
                   </span>
                 </div>
               </div>
@@ -553,8 +587,26 @@ export default function AdminDashboard() {
                     setLoginError(e.message || "Failed to sign in with Google");
                   }
                 }}
-                className="w-full h-14 bg-white/5 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all hover:bg-white/10 active:scale-95"
+                className="w-full h-12 bg-transparent border border-white/10 text-white rounded-xl font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all hover:bg-white/5 active:scale-[0.98]"
               >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
                 Continue with Google
               </button>
             </div>
@@ -770,6 +822,22 @@ export default function AdminDashboard() {
                 </button>
               )}
             </div>
+
+            <div className="relative w-full sm:max-w-[160px]">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full bg-neutral-900 border border-white/10 rounded-2xl py-3 px-4 text-xs focus:outline-none focus:border-white transition-colors text-white appearance-none cursor-pointer"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
@@ -784,7 +852,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => {
                 setIsRefreshing(true);
-                fetchBookings();
+                setTimeout(() => setIsRefreshing(false), 500);
               }}
               className="flex-1 sm:flex-none px-4 py-3 bg-neutral-900 border border-white/10 text-white rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-white/5 transition-colors shrink-0"
             >
@@ -1538,7 +1606,6 @@ export default function AdminDashboard() {
           onClose={() => setIsAddingBooking(false)}
           onAdded={() => {
             setIsAddingBooking(false);
-            fetchBookings();
           }}
         />
       )}

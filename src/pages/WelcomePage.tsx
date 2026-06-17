@@ -39,7 +39,7 @@ export default function WelcomePage() {
           }}
           className={`flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition-all ${
             isEditing 
-              ? "bg-blue-500/20 text-blue-400 border-blue-500/50" 
+              ? "bg-zinc-400/20 text-zinc-300 border-zinc-400/50" 
               : "bg-white/10 text-white/50 border-white/10 hover:text-white"
           }`}
           title="Toggle Edit Mode for Brand Reveal"
@@ -128,15 +128,31 @@ export default function WelcomePage() {
           </motion.p>
         </div>
 
-        <div className="w-full px-6 pb-12 z-10 flex flex-col gap-4">
+        <div className="w-full px-6 pb-12 z-10 flex flex-col items-center gap-4">
           <motion.button 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: showIntro ? 0 : 1, y: showIntro ? 20 : 0 }}
             transition={{ duration: 0.6, delay: showIntro ? 0 : 1.2 }}
             onClick={() => navigate("/login")}
-            className="w-full h-14 rounded-2xl bg-white text-black font-semibold text-lg flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors shadow-[0_4px_20px_rgba(255,255,255,0.1)]"
+            className="btn-primary w-[249px] h-14 mb-[49px] mx-auto animate-diamond-shine relative flex items-center justify-center"
           >
-            Sign In to your account
+            {/* Slow diamond shine animation */}
+            <motion.div
+              className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              style={{ transform: "skewX(-25deg)" }}
+              animate={{ x: ["-250%", "450%"] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+            
+            <motion.div
+              className="absolute left-6"
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Car size={20} className="text-black/60" />
+            </motion.div>
+            
+            <span className="tracking-[0.2em] pl-[0.2em] text-center w-full font-black text-xs">SIGN IN</span>
           </motion.button>
         </div>
       </div>

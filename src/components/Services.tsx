@@ -15,7 +15,7 @@ const SERVICES = [
     description:
       "High-pressure foam wash to remove dirt, grit, and grime without scratching your paint.",
     icon: Droplets,
-    color: "from-blue-500 to-cyan-400",
+    color: "from-zinc-400 to-cyan-400",
   },
   {
     id: "interior-cleaning",
@@ -31,7 +31,7 @@ const SERVICES = [
     description:
       "Restoration and UV protection for plastics, vinyl, and dashboard components.",
     icon: SprayCan,
-    color: "from-purple-500 to-pink-400",
+    color: "from-zinc-500 to-pink-400",
   },
   {
     id: "stain-removal",
@@ -39,7 +39,7 @@ const SERVICES = [
     description:
       "Intensive deep cleaning and stain removal for fabric and leather upholstery.",
     icon: Sparkles,
-    color: "from-indigo-500 to-blue-400",
+    color: "from-indigo-500 to-zinc-300",
   },
   {
     id: "waxing",
@@ -47,7 +47,7 @@ const SERVICES = [
     description:
       "Premium liquid wax application for long-lasting shine and environmental protection.",
     icon: PaintBucket,
-    color: "from-emerald-500 to-teal-400",
+    color: "from-zinc-400 to-zinc-300",
   },
   {
     id: "tyre-alloy",
@@ -73,7 +73,7 @@ export default function Services() {
             viewport={{ once: true }}
             className="inline-flex items-center justify-center space-x-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full mb-6"
           >
-            <Sparkles className="w-4 h-4 text-blue-400" />
+            <Sparkles className="w-4 h-4 text-zinc-300" />
             <span className="text-xs font-bold uppercase tracking-widest text-neutral-300">
               Our Services
             </span>
@@ -88,7 +88,7 @@ export default function Services() {
             Dritzz{" "}
             <span className="font-bold relative">
               Services
-              <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-blue-500"></span>
+              <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-zinc-400"></span>
             </span>
           </motion.h2>
           <motion.p

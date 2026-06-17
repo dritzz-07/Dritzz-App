@@ -20,7 +20,9 @@ service cloud.firestore {
         request.auth.token.phone_number == '+919876543210' // Add your admin phone numbers here if needed
       );
 
-      return isEmailAdmin || isPhoneAdmin;
+      let isDbAdmin = request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+
+      return isEmailAdmin || isPhoneAdmin || isDbAdmin;
     }
 
     function isOwner(userId) {
@@ -32,18 +34,28 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read, update, delete: if (request.auth != null && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if true;
     }
 
     match /subscriptions/{subId} {
-      allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read, update, delete: if (request.auth != null && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if true;
+    }
+
+    match /invoices/{invoiceId} {
+      allow read, update, delete: if (request.auth != null && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if true;
     }
 
     match /vehicles/{vehicleId} {
-      allow read, update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read, update, delete: if (request.auth != null && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if true;
+    }
+
+    match /notifications/{notifId} {
+      allow read, update, delete: if (request.auth != null && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if (request.auth != null && request.resource.data.userId == request.auth.uid) || isAdmin();
     }
   }
 }
