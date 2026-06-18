@@ -17,10 +17,13 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
 
+      - name: Regenerate Clean Gradle Wrapper
+        run: |
+          cd android
+          gradle wrapper --gradle-version 8.10.2
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          wrapper-validation-enabled: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
