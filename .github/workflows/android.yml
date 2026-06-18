@@ -16,7 +16,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'zulu'
-          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: android
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -33,7 +37,9 @@ jobs:
         run: npx cap sync android
 
       - name: Chmod gradlew
-        run: chmod +x android/gradlew
+        run: |
+          sed -i 's/\r$//' android/gradlew
+          chmod +x android/gradlew
 
       - name: Build Android APK
         run: |
