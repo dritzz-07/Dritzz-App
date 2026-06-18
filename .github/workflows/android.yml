@@ -16,10 +16,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'zulu'
-          cache: 'gradle'
-          cache-dependency-path: |
-            android/*.gradle*
-            android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          wrapper-validation-enabled: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
