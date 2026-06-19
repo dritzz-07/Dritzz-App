@@ -17,13 +17,16 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
 
-      - name: Download pristine Gradle Wrapper JAR
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -sSL https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradle/wrapper/gradle-wrapper.jar -o android/gradle/wrapper/gradle-wrapper.jar
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+          validate-wrappers: false
+
+      - name: Regenerate Clean Gradle Wrapper
+        run: |
+          cd android
+          gradle wrapper --gradle-version 8.10.2 --distribution-type all
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
