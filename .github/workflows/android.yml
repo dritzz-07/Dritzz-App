@@ -17,10 +17,10 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
 
-      - name: Regenerate Clean Gradle Wrapper
+      - name: Download pristine Gradle Wrapper JAR
         run: |
-          cd android
-          gradle wrapper --gradle-version 8.10.2
+          mkdir -p android/gradle/wrapper
+          curl -sSL https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradle/wrapper/gradle-wrapper.jar -o android/gradle/wrapper/gradle-wrapper.jar
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
